@@ -6,35 +6,36 @@ import (
 	"time"
 
 	"desafio-pos-graduacao/internal/config"
-	httpHandlers"desafio-pos-graduacao/internal/http"
+	httpHandlers "desafio-pos-graduacao/internal/http"
 	"desafio-pos-graduacao/internal/limiter"
-	"desafio-pos-graduacao/internal/limiter/storage/redisstorage"
+	redisstorage "desafio-pos-graduacao/internal/limiter/storage/redis"
 	"desafio-pos-graduacao/internal/middleware"
+
 	"github.com/go-redis/redis/v8"
 )
 
-func main(){
-	cfg:= config.Parse()
+func main() {
+	cfg := config.Parse()
 
-	rbd:= redis.NewClient(&redis.Options{
-		Addr: cfg.Redis.Addr,
-		Password: cfg.Redis.Password,
-		DB: cfg.Redis.DB,
-		ReadTimeout: 500*time.Millisecond,
-		WriteTimeout: 500*time.Millisecond,
+	rbd := redis.NewClient(&redis.Options{
+		Addr:         cfg.Redis.Addr,
+		Password:     cfg.Redis.Password,
+		DB:           cfg.Redis.DB,
+		ReadTimeout:  500 * time.Millisecond,
+		WriteTimeout: 500 * time.Millisecond,
 	})
-	store:= redisstorage.New(rbd)
+	store := redisstorage.New(rbd)
 
-	rl:= limiter.New(store, cfg)
+	rl := limiter.New(store, cfg)
 
-	mux:= http.NewServeMux()
+	mux := http.NewServeMux()
 	mux.HandleFunc("/", httpHandlers.RootHandler)
 	mux.HandleFunc("/health", httpHandlers.HealthHandler)
 
-	handler:= middleware.NewRateLimitMiddleware(rl, cfg, mux)
+	handler := middleware.NewRateLimitMiddleware(rl, cfg, mux)
 
 	server := &http.Server{
-		Addr: cfg.HTTPAddr,
+		Addr:    cfg.HTTPAddr,
 		Handler: handler,
 	}
 

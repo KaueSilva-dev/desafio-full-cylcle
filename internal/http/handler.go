@@ -1,7 +1,7 @@
 package http
 
 import(
-	"enconding/json"
+	"encoding/json"
 	"net/http"
 )
 
